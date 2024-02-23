@@ -62,9 +62,10 @@ def t_INT_LITERAL(t):
         sys.exit(1)
     return t
 
-# todo: fix newlines and line counting 
 def t_COMMENT(t):
     r'%[^%]*%'
+    # comments can span to multiple lines. This keeps count of correct line num
+    t.lexer.lineno += t.value.count("\n")
     pass
 
 t_ignore = " "
