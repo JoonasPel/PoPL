@@ -54,26 +54,33 @@ t_DIV = r'/'
 
 # longer tokens
 
-t_STRING = r'"([^"]*)"'
+
+def t_STRING(t):
+    r'"([^"]*)"'
+    t.value = t.value.replace('"', '')
+    return t
 
 def t_DATE_LITERAL(t):
     r'\d{4}-\d{2}-\d{2}'
     try:
-        datetime.date(int(t.value[0:4]), int(t.value[5:7]), int(t.value[8:10]))
+        t.value = datetime.date(
+            int(t.value[0:4]), int(t.value[5:7]), int(t.value[8:10]))
     except ValueError:
-        raise Exception(f"Invalid Date {t.value} at line {t.lexer.lineno}")
+        print(f"line {t.lexer.lineno}: Invalid Date")
+        sys.exit(1)
     return t
 
-# todo thousand separator
 def t_INT_LITERAL(t):
-    r'-?[0-9]+'
+    r'-?\d{1,3}(\'\d{3})*'
+    t.value = t.value.replace("'", "")
     t.value = int(t.value)
     if abs(t.value) >= 1_000_000_000_000:
-        raise Exception(f"Too large or small integer at line {t.lexer.lineno}")
+        print(f"line {t.lexer.lineno}: INT_LITERAL too large")
+        sys.exit(1)
     return t
 
 def t_COMMENT(t):
-    r'%[^%]*%'
+    r'\(%[^%]*%\)'
     # comments can span to multiple lines. This keeps count of correct line num
     t.lexer.lineno += t.value.count("\n")
     pass
