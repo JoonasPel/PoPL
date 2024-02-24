@@ -20,7 +20,7 @@ if __name__ == '__main__':
     EnvPath = os.path.join(currentPath, r'venv\Scripts\activate')
     testFilesBasePath = r'public_examples-main-01_lexer\01_lexer'
     testFileNames = GetTestFileNames(testFilesBasePath)
-
+    problemCount = 0
     for testFileName in testFileNames:
         print(f"\nTESTING WITH FILE {testFileName}")
         inputFile = os.path.join(testFilesBasePath, testFileName) + ".ph"
@@ -42,5 +42,7 @@ if __name__ == '__main__':
             else:
                 print(f"expected: {lines2[x]}")
                 print(f"got: {lines[x]}\n")
+                problemCount += 1
         if (len(lines2) != len(lines)):
-            print(f"DIFFERENT SIZE FOUND! expected: {lines2}, got {lines}")
+            print(f"DIFFERENT SIZE FOUND! expected: {len(lines2)}, got {len(lines)}")
+    print(f"\nProblems found: {problemCount}")
