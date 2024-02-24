@@ -1,4 +1,4 @@
-import sys, ply.lex
+import sys, ply.lex, datetime
 
 STUDENTNAME = "Joonas Pelttari"
 STUDENTID = 274830
@@ -9,13 +9,29 @@ usage: main.py [-h] [--who | -f FILE]
   -f FILE, --file FILE  filename to process
 '''
 
+reserved = {
+    'var': 'VAR',
+    'is': 'IS',
+    'unless': 'UNLESS',
+    'otherwise': 'OTHERWISE',
+    'until': 'UNTIL',
+    'do': 'DO',
+    'done': 'DONE',
+    'procedure': 'PROCEDURE',
+    'function': 'FUNCTION',
+    'return': 'RETURN',
+    'print': 'PRINT',
+    'end': 'END',
+}
+
 tokens = [
     'LPAREN','RPAREN','LSQUARE','RSQUARE','LCURLY',
     'RCURLY','APOSTROPHE','AMPERSAND','COMMA','DOT',
     'EQ','LT','PLUS','MINUS','MULT','DIV','INT_LITERAL',
-    'STRING', 'COMMENT'
-]+['VAR', 'IS', 'UNLESS', 'OTHERWISE', 'UNTIL', 'DO', 'DONE',
-   'PROCEDURE', 'FUNCTION', 'RETURN', 'PRINT', 'END']
+    'STRING', 'COMMENT', 'IDENT', 'DATE_LITERAL',
+    'FUNC_IDENT', 'PROC_IDENT',
+    ]
+tokens += reserved.values()
 
 # one and two letter tokens:
 t_LPAREN = r'\('
@@ -36,30 +52,24 @@ t_MINUS = r'-'
 t_MULT = r'\*'
 t_DIV = r'/'
 
-# keywords. \b is used to get boundaries so i.e. printed doesnt trigger print
-t_VAR = r'\bvar\b'
-t_IS = r'\bis\b'
-t_UNLESS = r'\bunless\b'
-t_OTHERWISE = r'\botherwise\b'
-t_UNTIL = r'\buntil\b'
-t_DO = r'\bdo\b'
-t_DONE = r'\bdone\b'
-t_PROCEDURE = r'\bprocedure\b'
-t_FUNCTION = r'\bfunction\b'
-t_RETURN = r'\breturn\b'
-t_PRINT = r'\bprint\b'
-t_END = r'\bend\b'
-
 # longer tokens
+
 t_STRING = r'"([^"]*)"'
+
+def t_DATE_LITERAL(t):
+    r'\d{4}-\d{2}-\d{2}'
+    try:
+        datetime.date(int(t.value[0:4]), int(t.value[5:7]), int(t.value[8:10]))
+    except ValueError:
+        raise Exception(f"Invalid Date {t.value} at line {t.lexer.lineno}")
+    return t
 
 # todo thousand separator
 def t_INT_LITERAL(t):
     r'-?[0-9]+'
     t.value = int(t.value)
     if abs(t.value) >= 1_000_000_000_000:
-        print("ERROR! INT_LITERAL TOO LARGE OR SMALL. Line:", t.lexer.lineno)
-        sys.exit(1)
+        raise Exception(f"Too large or small integer at line {t.lexer.lineno}")
     return t
 
 def t_COMMENT(t):
@@ -67,6 +77,20 @@ def t_COMMENT(t):
     # comments can span to multiple lines. This keeps count of correct line num
     t.lexer.lineno += t.value.count("\n")
     pass
+
+def t_IDENT(t):
+    r'[a-z][a-zA-Z0-9_]{1,}'
+    if t.value in reserved:
+        t.type = reserved[t.value]
+    return t
+
+def t_FUNC_IDENT(t):
+    r'[A-Z][a-z0-9_]{1,}'
+    return t
+
+def t_PROC_IDENT(t):
+    r'[A-Z]{2}[A-Z0-9_]*'
+    return t
 
 t_ignore = " "
 
@@ -94,7 +118,6 @@ def handleArguments(args):
 
 if __name__ == "__main__":
     fileName = handleArguments(sys.argv)
-    print("Starting to process file:", fileName)
     with open(fileName, 'r', encoding='utf-8') as file:
         data = file.read()
     lexer.input(data)
@@ -102,16 +125,3 @@ if __name__ == "__main__":
     while token:
         print(token)
         token = lexer.token()
-
-
-
-
-
-
-
-
-
-
-
-
-    
