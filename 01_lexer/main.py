@@ -1,7 +1,7 @@
 import sys, ply.lex, datetime
 
 STUDENTNAME = "Joonas Pelttari"
-STUDENTID = 274830
+STUDENTID = "H274830"
 HELPMESSAGE = '''
 usage: main.py [-h] [--who | -f FILE]
   -h, --help            show this help message and exit
@@ -115,9 +115,9 @@ lexer = ply.lex.lex()
 def handleArguments(args):
     if '-h' in args or '--help' in args:
         print(HELPMESSAGE)
-    if '--who' in args:
+    elif '--who' in args:
         print(STUDENTNAME, STUDENTID)
-    if '-f' in args or '--file' in args:
+    elif '-f' in args or '--file' in args:
         return args[-1]
     else:
         print(HELPMESSAGE)
