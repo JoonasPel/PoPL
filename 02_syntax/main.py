@@ -67,19 +67,17 @@ def p_opt_variable_definition(p):
     debug_syntax(p)
 
 def p_function_definition(p):
-    '''function_definition : FUNCTION FUNC_IDENT LCURLY RCURLY
-                           | FUNCTION FUNC_IDENT LCURLY formals RCURLY
-                           | RETURN IDENT opt_variable_definition IS
-                           | rvalue END FUNCTION'''
+    '''function_definition : FUNCTION FUNC_IDENT LCURLY opt_formals RCURLY RETURN IDENT opt_variable_definition IS rvalue END FUNCTION'''
     debug_syntax(p)
 
 
 def p_procedure_definition(p):
-    '''procedure_definition : PROCEDURE PROC_IDENT LCURLY RCURLY
-                            | PROCEDURE PROC_IDENT LCURLY formals RCURLY
-                            | RETURN IDENT opt_variable_definition IS
-                            | opt_variable_definition IS
-                            | statement_list END PROCEDURE'''
+    '''procedure_definition : PROCEDURE PROC_IDENT LCURLY opt_formals RCURLY opt_return_type opt_variable_definition IS statement_list END PROCEDURE'''
+    debug_syntax(p)
+
+def p_opt_return_type(p):
+    '''opt_return_type : RETURN IDENT
+                       | empty'''
     debug_syntax(p)
 
 def p_formals(p):
@@ -87,18 +85,27 @@ def p_formals(p):
                | formals COMMA formal_arg'''
     debug_syntax(p)
 
+def p_opt_formals(p):
+    '''opt_formals : formals
+                   | empty'''
+    debug_syntax(p)
+
 def p_formal_arg(p):
     '''formal_arg : IDENT LSQUARE IDENT RSQUARE'''
     debug_syntax(p)
 
 def p_procedure_call(p):
-    '''procedure_call : PROC_IDENT LPAREN RPAREN
-                      | PROC_IDENT LPAREN arguments RPAREN'''
+    '''procedure_call : PROC_IDENT LPAREN opt_args RPAREN'''
     debug_syntax(p)
 
 def p_arguments(p):
     '''arguments : expression
                  | arguments COMMA expression'''
+    debug_syntax(p)
+
+def p_opt_args(p):
+    '''opt_args : arguments
+                | empty'''
     debug_syntax(p)
 
 def p_assignment(p):
@@ -117,16 +124,16 @@ def p_rvalue(p):
     debug_syntax(p)
 
 def p_print_statement(p):
-    '''print_statement : PRINT print_item opt_print_statement'''
+    '''print_statement : PRINT printlist'''
     debug_syntax(p)
 
-def p_opt_print_statement(p):
-    '''opt_print_statement : opt_print_statement AMPERSAND print_item
-                           | empty'''
+def p_printlist(p):
+    '''printlist : printitem
+                 | printlist AMPERSAND printitem'''
     debug_syntax(p)
 
-def p_print_item(p):
-    '''print_item : STRING
+def p_printitem(p):
+    '''printitem : STRING
                   | expression'''
     debug_syntax(p)
 
@@ -134,22 +141,38 @@ def p_statement(p):
     '''statement : procedure_call
                  | assignment
                  | print_statement
+                 | unless_statement
                  | DO statement_list UNTIL expression
-                 | DO statement_list UNLESS expression OTHERWISE statement_list DONE
-                 | DO statement_list UNLESS expression DONE
                  | RETURN expression'''
+    debug_syntax(p)
+
+def p_unless_statement(p):
+    '''unless_statement : DO statement_list UNLESS expression opt_otherwise DONE'''
+    debug_syntax(p)
+
+def p_opt_otherwise(p):
+    '''opt_otherwise : OTHERWISE statement_list
+                     | empty'''
     debug_syntax(p)
 
 def p_expression(p):
     '''expression : simple_expr
-                  | expression EQ simple_expr
-                  | expression LT simple_expr'''
+                  | expression relation_op simple_expr'''
+    debug_syntax(p)
+
+def p_relation_op(p):
+    '''relation_op : EQ
+                   | LT'''
     debug_syntax(p)
 
 def p_simple_expr(p):
     '''simple_expr : term
-                   | simple_expr PLUS term
-                   | simple_expr MINUS term'''
+                   | simple_expr add_or_minus term'''
+    debug_syntax(p)
+
+def p_add_or_minus(p):
+    '''add_or_minus : PLUS
+                    | MINUS'''
     debug_syntax(p)
 
 def p_term(p):
@@ -175,8 +198,7 @@ def p_atom(p):
     debug_syntax(p)
 
 def p_function_call(p):
-    '''function_call : FUNC_IDENT LPAREN RPAREN
-                     | FUNC_IDENT LPAREN arguments RPAREN'''
+    '''function_call : FUNC_IDENT LPAREN opt_args RPAREN'''
     debug_syntax(p)
 
 def p_unless_expression(p):
