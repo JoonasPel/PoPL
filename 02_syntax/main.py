@@ -31,18 +31,16 @@ tokens = lexer.tokens
 # in other words: after processing all input tokens, if this start-symbol
 # is the only one left, we do not have any syntax errors
 def p_program(p):
-    '''program : statement_list
-               | opt_definitions statement_list'''
+    '''program : opt_definitions statement_list'''
     debug_syntax(p)
 
 def p_empty(p):
     '''empty : '''
     debug_syntax(p)
 
-
 def p_statement_list(p):
     '''statement_list : statement
-                      | statement_list COMMA statement'''
+                      | statement COMMA statement_list'''
     debug_syntax(p)
 
 def p_definitions(p):
@@ -60,18 +58,23 @@ def p_variable_definition(p):
     '''variable_definition : VAR IDENT EQ expression'''
     debug_syntax(p)
 
-def p_opt_variable_definition(p):
-    '''opt_variable_definition : opt_variable_definition variable_definition
-                               | empty'''
+def p_opt_var_defs(p):
+    '''opt_var_defs : var_def_list
+                    | empty'''
+    debug_syntax(p)
+
+def p_var_def_list(p):
+    '''var_def_list : var_def_list variable_definition
+                    | variable_definition
+                    | empty'''
     debug_syntax(p)
 
 def p_function_definition(p):
-    '''function_definition : FUNCTION FUNC_IDENT LCURLY opt_formals RCURLY RETURN IDENT opt_variable_definition IS rvalue END FUNCTION'''
+    '''function_definition : FUNCTION FUNC_IDENT LCURLY opt_formals RCURLY RETURN IDENT opt_var_defs IS rvalue END FUNCTION'''
     debug_syntax(p)
 
-
 def p_procedure_definition(p):
-    '''procedure_definition : PROCEDURE PROC_IDENT LCURLY opt_formals RCURLY opt_return_type opt_variable_definition IS statement_list END PROCEDURE'''
+    '''procedure_definition : PROCEDURE PROC_IDENT LCURLY opt_formals RCURLY opt_return_type opt_var_defs IS statement_list END PROCEDURE'''
     debug_syntax(p)
 
 def p_opt_return_type(p):
@@ -97,13 +100,13 @@ def p_procedure_call(p):
     '''procedure_call : PROC_IDENT LPAREN opt_args RPAREN'''
     debug_syntax(p)
 
-def p_arguments(p):
-    '''arguments : expression
-                 | arguments COMMA expression'''
+def p_args(p):
+    '''args : expression
+            | args COMMA expression'''
     debug_syntax(p)
 
 def p_opt_args(p):
-    '''opt_args : arguments
+    '''opt_args : args
                 | empty'''
     debug_syntax(p)
 
@@ -141,8 +144,12 @@ def p_statement(p):
                  | assignment
                  | print_statement
                  | unless_statement
-                 | DO statement_list UNTIL expression
+                 | loop_statement
                  | RETURN expression'''
+    debug_syntax(p)
+
+def p_loop_statement(p):
+    '''loop_statement : DO statement_list UNTIL expression'''
     debug_syntax(p)
 
 def p_unless_statement(p):
@@ -174,10 +181,14 @@ def p_add_or_minus(p):
                     | MINUS'''
     debug_syntax(p)
 
+def p_mult_or_div(p):
+    '''mult_or_div : MULT
+                   | DIV'''
+    debug_syntax(p)
+
 def p_term(p):
     '''term : factor
-            | term MULT factor
-            | term DIV factor'''
+            | term mult_or_div factor'''
     debug_syntax(p)
 
 def p_factor(p):
@@ -205,8 +216,10 @@ def p_unless_expression(p):
     debug_syntax(p)
 
 def p_error(p):
-    #6:Syntax Error (token: 'something')
-    print( f"{p.lineno}:Syntax Error (token: '{p.value}')" )
+    if (p):
+        print( f"{p.lineno}:Syntax Error (token: '{p.value}')" )
+    else:
+        print("Unexpected end of input")
     raise SystemExit
 
 parser = ply.yacc.yacc()
