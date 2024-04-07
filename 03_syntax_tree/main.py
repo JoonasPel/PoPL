@@ -65,8 +65,7 @@ def p_opt_var_defs(p):
 
 def p_var_def_list(p):
     '''var_def_list : var_def_list variable_definition
-                    | variable_definition
-                    | empty'''
+                    | variable_definition'''
     debug_syntax(p)
 
 def p_function_definition(p):
