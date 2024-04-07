@@ -8,3 +8,6 @@
 # PLY yacc generated files
 **/parser.out
 **/parsetab.py
+
+**/public_examples*
+**.docx
