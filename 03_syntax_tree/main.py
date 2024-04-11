@@ -2,26 +2,16 @@
 
 import ply.yacc
 import ply.lex
-import lexer # previous phase example snippet code
+import lexer
+import tree_print
 
-# Simple debuggin function to call from syntax rules
-symbolnum=0
+# Class for syntax tree nodes
+class ASTnode:
+    def __init__(self, typestr):
+        self.nodetype = typestr
+
 def debug_syntax(p):
-  global symbolnum
-  symbolnum=symbolnum+1
-  p[0] = symbolnum
-  msg = ""
-  for i,s in enumerate(p.slice):
-    if s is not None:
-      if type(s) is ply.lex.LexToken:
-        msg = msg + str(s.type)+"<" + str(s.value) + "> "
-      else:
-        msg = msg + str(s)+"("+str(p[i])+")" + " "
-    else:
-      msg = msg + "?? "
-    if i == 0:
-      msg = msg + ":: "
-  print(msg)
+    pass
 
 # tokens are defined in lex-module, but needed here also in syntax rules
 tokens = lexer.tokens
@@ -32,30 +22,59 @@ tokens = lexer.tokens
 # is the only one left, we do not have any syntax errors
 def p_program(p):
     '''program : opt_definitions statement_list'''
+    p[0] = ASTnode("program")
+    p[0].children_definitions = p[1]
+    p[0].children_statements = p[2]
+    p[0].lineno = p.lineno(0)
     debug_syntax(p)
 
 def p_empty(p):
     '''empty : '''
     debug_syntax(p)
 
-def p_statement_list(p):
-    '''statement_list : statement
-                      | statement COMMA statement_list'''
+def p_statement_list1(p):
+    '''statement_list : statement'''
+    p[0] = [p[1]]
     debug_syntax(p)
 
-def p_definitions(p):
-    '''definitions : function_definition
-                   | procedure_definition
-                   | variable_definition'''
+def p_statement_list2(p):
+    '''statement_list : statement COMMA statement_list'''
+    p[0] = p[3]
+    p[0].append(p[1])
     debug_syntax(p)
 
-def p_opt_definitions(p):
-    '''opt_definitions : opt_definitions definitions
-                       | empty'''
+def p_definitions1(p):
+    '''definitions : function_definition'''
+    debug_syntax(p)
+
+def p_definitions2(p):
+    '''definitions : procedure_definition'''
+    debug_syntax(p)
+
+def p_definitions3(p):
+    '''definitions : variable_definition'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_opt_definitions1(p):
+    '''opt_definitions : empty'''
+    p[0] = []
+    debug_syntax(p)
+
+def p_opt_definitions2(p):
+    '''opt_definitions : opt_definitions definitions'''
+    p[0] = p[1]
+    p[0].append(p[2])
     debug_syntax(p)
 
 def p_variable_definition(p):
     '''variable_definition : VAR IDENT EQ expression'''
+    p[0] = ASTnode("variable_def")
+    p[0].child_name = ASTnode("id_name")
+    p[0].child_name.value = p[2]
+    p[0].child_name.lineno = p.lineno(2)
+    p[0].child_init_value = p[4]
+    p[0].lineno = p.lineno(1)
     debug_syntax(p)
 
 def p_opt_var_defs(p):
@@ -109,46 +128,95 @@ def p_opt_args(p):
                 | empty'''
     debug_syntax(p)
 
-def p_assignment(p):
-    '''assignment : lvalue EQ rvalue
-                  | IDENT DOT IDENT'''
+def p_assignment1(p):
+    '''assignment : lvalue EQ rvalue'''
+    p[0] = ASTnode("assignment")
+    p[0].child_lvalue = p[1]
+    p[0].child_rvalue = p[3]
+    p[0].lineno = p.lineno(2)
     debug_syntax(p)
 
-def p_lvalue(p):
-    '''lvalue : IDENT
-              | IDENT DOT IDENT'''
+def p_assignment2(p):
+    '''assignment : IDENT DOT IDENT'''
     debug_syntax(p)
 
-def p_rvalue(p):
-    '''rvalue : expression
-              | unless_expression'''
+def p_lvalue1(p):
+    '''lvalue : IDENT'''
+    p[0] = ASTnode("var_lvalue")
+    p[0].value = p[1]
+    p[0].lineno = p.lineno(1)
+    debug_syntax(p)
+
+def p_lvalue2(p):
+    '''lvalue : IDENT DOT IDENT'''
+    debug_syntax(p)
+
+def p_rvalue1(p):
+    '''rvalue : expression'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_rvalue2(p):
+    '''rvalue : unless_expression'''
+    p[0] = p[1]
     debug_syntax(p)
 
 def p_print_statement(p):
     '''print_statement : PRINT printlist'''
+    p[0] = ASTnode("print_statement")
+    p[0].children_printitems = p[2]
+    p[0].lineno = p.lineno(1)
     debug_syntax(p)
 
-def p_printlist(p):
-    '''printlist : printitem
-                 | printlist AMPERSAND printitem'''
+def p_printlist1(p):
+    '''printlist : printitem'''
+    p[0] = [p[1]]
     debug_syntax(p)
 
-def p_printitem(p):
-    '''printitem : STRING
-                  | expression'''
+def p_printlist2(p):
+    '''printlist : printlist AMPERSAND printitem'''
+    p[0] = p[1]
+    p[0].append(p[3])
     debug_syntax(p)
 
-def p_statement(p):
+def p_printitem1(p):
+    '''printitem : expression'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_printitem2(p):
+    '''printitem : STRING'''
+    p[0] = p[1]
+    p[0].lineno = p.lineno(1)
+    debug_syntax(p)
+
+def p_statement1(p):
     '''statement : procedure_call
-                 | assignment
-                 | print_statement
                  | unless_statement
-                 | loop_statement
                  | RETURN expression'''
+    debug_syntax(p)
+
+def p_statement2(p):
+    '''statement : loop_statement'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_statement3(p):
+    '''statement : print_statement'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_statement4(p):
+    '''statement : assignment'''
+    p[0] = p[1]
     debug_syntax(p)
 
 def p_loop_statement(p):
     '''loop_statement : DO statement_list UNTIL expression'''
+    p[0] = ASTnode("loop_statement")
+    p[0].child_condition = p[4]
+    p[0].children_stmts = p[2]
+    p[0].lineno = p.lineno(1)
     debug_syntax(p)
 
 def p_unless_statement(p):
@@ -160,24 +228,51 @@ def p_opt_otherwise(p):
                      | empty'''
     debug_syntax(p)
 
-def p_expression(p):
-    '''expression : simple_expr
-                  | expression relation_op simple_expr'''
+def p_expression1(p):
+    '''expression : simple_expr'''
+    p[0] = p[1]
     debug_syntax(p)
 
-def p_relation_op(p):
-    '''relation_op : EQ
-                   | LT'''
+def p_expression2(p):
+    '''expression : expression relation_op simple_expr'''
+    p[0] = p[2]
+    p[0].child_left_expr = p[1]
+    p[0].child_right_expr = p[3]
     debug_syntax(p)
 
-def p_simple_expr(p):
-    '''simple_expr : term
-                   | simple_expr add_or_minus term'''
+def p_relation_op1(p):
+    '''relation_op : EQ'''
+    p[0] = ASTnode("=_op")
+    p[0].lineno = p.lineno(1)
     debug_syntax(p)
 
-def p_add_or_minus(p):
-    '''add_or_minus : PLUS
-                    | MINUS'''
+def p_relation_op2(p):
+    '''relation_op : LT'''
+    p[0] = ASTnode("<_op")
+    p[0].lineno = p.lineno(1)
+    debug_syntax(p)
+
+def p_simple_expr1(p):
+    '''simple_expr : term'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_simple_expr2(p):
+    '''simple_expr : simple_expr add_or_minus term'''
+    p[0] = p[2]
+    p[0].child_left_expr = p[1]
+    p[0].child_right_expr = p[3]
+    debug_syntax(p)
+
+def p_add_or_minus1(p):
+    '''add_or_minus : PLUS'''
+    p[0] = ASTnode("+_op")
+    p[0].lineno = p.lineno(1)
+    debug_syntax(p)
+
+def p_add_or_minus2(p):
+    '''add_or_minus : MINUS'''
+    p[0] = ASTnode("-_op")
     debug_syntax(p)
 
 def p_mult_or_div(p):
@@ -185,25 +280,52 @@ def p_mult_or_div(p):
                    | DIV'''
     debug_syntax(p)
 
-def p_term(p):
-    '''term : factor
-            | term mult_or_div factor'''
+def p_term1(p):
+    '''term : factor'''
+    p[0] = p[1]
     debug_syntax(p)
 
-def p_factor(p):
-    '''factor : atom
-              | PLUS atom  
-              | MINUS atom'''
+# TODO DIV MYÖS
+def p_term2(p):
+    '''term : term mult_or_div factor'''
+    p[0] = ASTnode("*_op")
+    p[0].child_left_expr = p[1]
+    p[0].child_right_expr = p[3]
     debug_syntax(p)
 
-def p_atom(p):
-    '''atom : IDENT
-            | IDENT APOSTROPHE IDENT
-            | INT_LITERAL
+def p_factor1(p):
+    '''factor : atom'''
+    p[0] = p[1]
+    debug_syntax(p)
+
+def p_factor2(p):
+    '''factor : PLUS atom'''
+    debug_syntax(p)
+
+def p_factor3(p):
+    '''factor : MINUS atom'''
+    debug_syntax(p)
+
+def p_atom1(p):
+    '''atom : IDENT APOSTROPHE IDENT
             | DATE_LITERAL
             | function_call
             | procedure_call
             | LPAREN expression RPAREN'''
+    debug_syntax(p)
+
+def p_atom2(p):
+    '''atom : INT_LITERAL'''
+    p[0] = ASTnode("int_literal")
+    p[0].value = p[1]
+    p[0].lineno = p.lineno(1)
+    debug_syntax(p)
+
+def p_atom3(p):
+    '''atom : IDENT'''
+    p[0] = ASTnode("id_name")
+    p[0].value = p[1]
+    p[0].lineno = p.lineno(1)
     debug_syntax(p)
 
 def p_function_call(p):
@@ -226,20 +348,19 @@ parser = ply.yacc.yacc()
 if __name__ == '__main__':
     import argparse, codecs
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('-d', '--debug', action='store_true', help='debug?' )
+    arg_parser.add_argument('-t', '--treetype', help='type of output tree (unicode/ascii/dot)')
     group = arg_parser.add_mutually_exclusive_group()
     group.add_argument('--who', action='store_true', help='who wrote this' )
     group.add_argument('-f', '--file', help='filename to process')
     ns = arg_parser.parse_args()
-    Debug = True if ns.debug else False
+    outformat="unicode"
+    if ns.treetype:
+      outformat = ns.treetype
     if ns.who == True:
-        # identify who wrote this
-        print( 'H274830 Joonas Pelttari' )
+        print('H274830 Joonas Pelttari')
     elif ns.file is None:
-        # user didn't provide input filename
         arg_parser.print_help()
     else:
         data = codecs.open( ns.file, encoding='utf-8' ).read()
-        result = parser.parse(data, lexer=lexer.lexer, debug=Debug )
-        print( 'syntax OK' )
-
+        result = parser.parse(data, lexer=lexer.lexer, debug=False)
+        tree_print.treeprint(result, outformat)
