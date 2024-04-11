@@ -4,6 +4,7 @@ import ply.yacc
 import ply.lex
 import lexer
 import tree_print
+import semantics_check
 
 # Class for syntax tree nodes
 class ASTnode:
@@ -13,13 +14,8 @@ class ASTnode:
 def debug_syntax(p):
     pass
 
-# tokens are defined in lex-module, but needed here also in syntax rules
 tokens = lexer.tokens
 
-# any function starting with 'p_' is PLY yacc rule
-# first definition is the target we want to reduce
-# in other words: after processing all input tokens, if this start-symbol
-# is the only one left, we do not have any syntax errors
 def p_program(p):
     '''program : opt_definitions statement_list'''
     p[0] = ASTnode("program")
@@ -355,12 +351,13 @@ if __name__ == '__main__':
     ns = arg_parser.parse_args()
     outformat="unicode"
     if ns.treetype:
-      outformat = ns.treetype
+        outformat = ns.treetype
     if ns.who == True:
         print('H274830 Joonas Pelttari')
     elif ns.file is None:
         arg_parser.print_help()
     else:
         data = codecs.open( ns.file, encoding='utf-8' ).read()
-        result = parser.parse(data, lexer=lexer.lexer, debug=False)
-        tree_print.treeprint(result, outformat)
+        ast_tree = parser.parse(data, lexer=lexer.lexer, debug=False)
+        tree_print.treeprint(ast_tree, outformat)
+        semantics_check.semantic_checks(ast_tree)
