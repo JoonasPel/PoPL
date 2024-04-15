@@ -107,12 +107,10 @@ def p_procedure_definition(p):
     p[0].children_stmts = p[9]
     p[0].lineno = p.lineno(1)
 
-# not tested
 def p_opt_return_type1(p):
     '''opt_return_type : RETURN IDENT'''
     p[0] = create_node("id_type", p[2], p.lineno(2))
 
-# not tested
 def p_opt_return_type2(p):
     '''opt_return_type : empty'''
     p[0] = p[1]
@@ -158,24 +156,23 @@ def p_opt_args2(p):
     '''opt_args : empty'''
     p[0] = []
 
-def p_assignment1(p):
+def p_assignment(p):
     '''assignment : lvalue EQ rvalue'''
     p[0] = ASTnode("assignment")
     p[0].child_lvalue = p[1]
     p[0].child_rvalue = p[3]
     p[0].lineno = p.lineno(2)
 
-def p_assignment2(p):
-    '''assignment : IDENT DOT IDENT'''
-
 def p_lvalue1(p):
     '''lvalue : IDENT'''
-    p[0] = ASTnode("var_lvalue")
-    p[0].value = p[1]
-    p[0].lineno = p.lineno(1)
+    p[0] = create_node("id_name", p[1], p.lineno(1))
 
 def p_lvalue2(p):
     '''lvalue : IDENT DOT IDENT'''
+    p[0] = ASTnode("attr_assign")
+    p[0].child_var = create_node("id_name", p[1], p.lineno(1))
+    p[0].child_attr = create_node("attr", p[3], p.lineno(3))
+    p[0].lineno = p.lineno(1)
 
 def p_rvalue1(p):
     '''rvalue : expression'''
@@ -211,8 +208,10 @@ def p_printitem2(p):
     p[0].lineno = p.lineno(1)
 
 def p_statement1(p):
-    '''statement : unless_statement
-                 | RETURN expression'''
+    '''statement : RETURN expression'''
+    p[0] = ASTnode("return_stmt")
+    p[0].child_expr = p[2]
+    p[0].lineno = p.lineno(1)
 
 def p_statement2(p):
     '''statement : loop_statement'''
@@ -230,6 +229,10 @@ def p_statement5(p):
     '''statement : procedure_call'''
     p[0] = p[1]
 
+def p_statement6(p):
+    '''statement : unless_statement'''
+    p[0] = p[1]
+
 def p_loop_statement(p):
     '''loop_statement : DO statement_list UNTIL expression'''
     p[0] = ASTnode("loop_statement")
@@ -237,12 +240,23 @@ def p_loop_statement(p):
     p[0].children_stmts = p[2]
     p[0].lineno = p.lineno(1)
 
+
 def p_unless_statement(p):
     '''unless_statement : DO statement_list UNLESS expression opt_otherwise DONE'''
+    p[0] = ASTnode("unless_stmt")
+    p[0].children_stmts = p[2]
+    p[0].child_unless = p[4]
+    p[0].children_otherwise = p[5]
+    p[0].lineno = p.lineno(1)
 
-def p_opt_otherwise(p):
-    '''opt_otherwise : OTHERWISE statement_list
-                     | empty'''
+
+def p_opt_otherwise1(p):
+    '''opt_otherwise : OTHERWISE statement_list'''
+    p[0] = p[2]
+
+def p_opt_otherwise2(p):
+    '''opt_otherwise : empty'''
+    p[0] = []
 
 def p_expression1(p):
     '''expression : simple_expr'''
@@ -310,13 +324,19 @@ def p_factor1(p):
 
 def p_factor2(p):
     '''factor : PLUS atom'''
+    p[0] = p[2]
 
+# not sure about this
 def p_factor3(p):
     '''factor : MINUS atom'''
+    #p[0] = -p[1]
 
 def p_atom1(p):
-    '''atom : IDENT APOSTROPHE IDENT
-            | DATE_LITERAL'''
+    '''atom : IDENT APOSTROPHE IDENT'''
+    p[0] = ASTnode("attr_read")
+    p[0].child_var = create_node("id_name", p[1], p.lineno(1))
+    p[0].child_attr = create_node("attr", p[3], p.lineno(3))
+    p[0].lineno = p.lineno(1)
 
 def p_atom2(p):
     '''atom : INT_LITERAL'''
@@ -340,6 +360,10 @@ def p_atom6(p):
     '''atom : procedure_call'''
     p[0] = p[1]
 
+def p_atom7(p):
+    '''atom : DATE_LITERAL'''
+    p[0] = create_node("date_literal", p[1], p.lineno(1))
+
 def p_function_call(p):
     '''function_call : FUNC_IDENT LPAREN opt_args RPAREN'''
     p[0] = ASTnode("function_call")
@@ -356,6 +380,11 @@ def p_procedure_call(p):
 
 def p_unless_expression(p):
     '''unless_expression : DO expression UNLESS expression OTHERWISE expression DONE'''
+    p[0] = ASTnode("unless_expr")
+    p[0].child_do = p[2]
+    p[0].child_unless = p[4]
+    p[0].child_otherwise = p[6]
+    p[0].lineno = p.lineno(1)
 
 def p_error(p):
     if (p):
