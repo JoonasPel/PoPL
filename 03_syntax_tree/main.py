@@ -130,7 +130,7 @@ def p_opt_formals1(p):
 
 def p_opt_formals2(p):
     '''opt_formals : empty'''
-    p[0] = p[1]
+    p[0] = []
 
 def p_formal_arg(p):
     '''formal_arg : IDENT LSQUARE IDENT RSQUARE'''
@@ -329,7 +329,6 @@ def p_factor2(p):
 # not sure about this
 def p_factor3(p):
     '''factor : MINUS atom'''
-    #p[0] = -p[1]
 
 def p_atom1(p):
     '''atom : IDENT APOSTROPHE IDENT'''

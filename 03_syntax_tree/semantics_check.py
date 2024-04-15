@@ -9,7 +9,7 @@ def check_date_attr_read(node, semdata):
     nodetype = node.nodetype
     if nodetype == "attr_read":
         if node.child_attr.value not in allowed:
-            return "Error, reading invalid attribute from a date, line " + str(node.lineno)
+            return "Error, reading invalid attribute from a date"
         return None
 
 # Check that we are modifying only allowed attrs from a date. e.g somedate.month
@@ -18,23 +18,33 @@ def check_date_attr_assign(node, semdata):
     nodetype = node.nodetype
     if nodetype == "attr_assign":
         if node.child_attr.value not in allowed:
-            return "Error, modifying invalid attribute from a date, line " + str(node.lineno)
+            return "Error, modifying invalid attribute from a date"
         return None
 
 # Check that function and procedure definitions have return type of int or date
 # Notice that procedure is allowed to have no return value at all by the lang
+# Also check that parameters are only int or date type.
 def check_func_proc_returntypes(node, semdata):
     allowed = ["int", "date_literal"]
     nodetype = node.nodetype
     if nodetype == "function_def":
-        type = node.child_returntype.value
-        if type not in allowed:
-            return f"Error, function returns not allowed type ({type}), line {str(node.lineno)}"
-        return None 
+        return_type = node.child_returntype.value
+        if return_type not in allowed:
+            return f"Error, function returns not allowed type ({return_type})"
+        parameter_types = node.children_formal_args
+        for param in parameter_types:
+            if param.child_type.value not in allowed:
+                return f"Error, function param not allowed, type: ({param.child_type.value})"  
+        return None
+    
     if nodetype == "procedure_def":
-        if node.child_returntype != None and node.child_returntype.value not in allowed:
+        if node.child_returntype is not None and node.child_returntype.value not in allowed:
             type = node.child_returntype.value
-            return f"Error, procedure returns not allowed type ({type}), line {str(node.lineno)}"
+            return f"Error, procedure returns not allowed type ({type})"
+        parameter_types = node.children_formal_args
+        for param in parameter_types:
+            if param.child_type.value not in allowed:
+                return f"Error, function param not allowed, type: ({param.child_type.value})"  
         return None
 
 # Check that function definitions do NOT have procedure calls inside them.
@@ -43,7 +53,7 @@ def check_no_nested_proc_call_before(node, semdata):
     if nodetype == "function_def":
         semdata.inside_function_def = True
     if nodetype == "procedure_call" and semdata.inside_function_def:
-        return f"Error, procedure call not allowed inside function def, line {str(node.lineno)}"
+        return "Error, procedure call not allowed inside function def"
 
 def check_no_nested_proc_call_after(node, semdata):
     nodetype = node.nodetype
@@ -62,7 +72,7 @@ def check_date_literal_usage_after(node, semdata):
             return None
         if nodetype == "assignment" and node.child_rvalue.nodetype == "date_literal":
             return None
-        return f"Error, date_literal in a wrong place, line {str(node.lineno)}"
+        return "Error, date_literal in a wrong place"
 
 # Check that a procedure has a return statement only if it returns anything
 # Basically find out if return type and return stmt exist and after leaving
@@ -81,7 +91,7 @@ def check_return_stms_allowed_after(node, semdata):
     if nodetype == "procedure_def":
         semdata.inside_proc_def = False
         if semdata.return_stmt_exists and not semdata.return_exists:
-            return f"Error, procedure has return stmt but returns nothing, line {str(node.lineno)}"
+            return "Error, procedure has return stmt but returns nothing"
         # init values to False again for possible another proc defs
         semdata.return_exists = False
         semdata.return_stmt_exists = False
@@ -90,6 +100,7 @@ def semantic_checks(tree):
     semdata = SemData()
 
     visit_tree(tree, check_date_attr_read, None, semdata)
+    visit_tree(tree, check_date_attr_assign, None, semdata)
     visit_tree(tree, check_func_proc_returntypes, None, semdata)
 
     semdata.inside_function_def = False
