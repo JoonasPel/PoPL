@@ -76,6 +76,7 @@ def p_opt_var_defs1(p):
 
 def p_opt_var_defs2(p):
     '''opt_var_defs : empty'''
+    p[0] = []
 
 def p_var_def_list1(p):
     '''var_def_list : var_def_list variable_definition'''
@@ -91,13 +92,20 @@ def p_function_definition(p):
     p[0] = ASTnode("function_def")
     p[0].child_name = create_node("id_name", p[2], p.lineno(2))
     p[0].child_returntype = create_node("id_type", p[7], p.lineno(7))
-    p[0].child_var_defs = p[8]
+    p[0].children_var_defs = p[8]
     p[0].children_formal_args = p[4]
     p[0].child_body = p[10]
     p[0].lineno = p.lineno(1)
 
 def p_procedure_definition(p):
     '''procedure_definition : PROCEDURE PROC_IDENT LCURLY opt_formals RCURLY opt_return_type opt_var_defs IS statement_list END PROCEDURE'''
+    p[0] = ASTnode("procedure_def")
+    p[0].child_name = create_node("id_name", p[2], p.lineno(2))
+    p[0].child_returntype = p[6]
+    p[0].children_var_defs = p[7]
+    p[0].children_formal_args = p[4]
+    p[0].children_stmts = p[9]
+    p[0].lineno = p.lineno(1)
 
 # not tested
 def p_opt_return_type1(p):
@@ -132,9 +140,6 @@ def p_formal_arg(p):
     p[0].child_name = create_node("id_name", p[1], p.lineno(1))
     p[0].child_type = create_node("id_type", p[3], p.lineno(3))
     p[0].lineno = p.lineno(1)
-
-def p_procedure_call(p):
-    '''procedure_call : PROC_IDENT LPAREN opt_args RPAREN'''
 
 def p_args1(p):
     '''args : expression'''
@@ -206,8 +211,7 @@ def p_printitem2(p):
     p[0].lineno = p.lineno(1)
 
 def p_statement1(p):
-    '''statement : procedure_call
-                 | unless_statement
+    '''statement : unless_statement
                  | RETURN expression'''
 
 def p_statement2(p):
@@ -220,6 +224,10 @@ def p_statement3(p):
 
 def p_statement4(p):
     '''statement : assignment'''
+    p[0] = p[1]
+
+def p_statement5(p):
+    '''statement : procedure_call'''
     p[0] = p[1]
 
 def p_loop_statement(p):
@@ -308,8 +316,7 @@ def p_factor3(p):
 
 def p_atom1(p):
     '''atom : IDENT APOSTROPHE IDENT
-            | DATE_LITERAL
-            | procedure_call'''
+            | DATE_LITERAL'''
 
 def p_atom2(p):
     '''atom : INT_LITERAL'''
@@ -329,9 +336,20 @@ def p_atom5(p):
     '''atom : LPAREN expression RPAREN'''
     p[0] = p[2]
 
+def p_atom6(p):
+    '''atom : procedure_call'''
+    p[0] = p[1]
+
 def p_function_call(p):
     '''function_call : FUNC_IDENT LPAREN opt_args RPAREN'''
     p[0] = ASTnode("function_call")
+    p[0].child_name = create_node("id_name", p[1], p.lineno(1))
+    p[0].children_args = p[3]
+    p[0].lineno = p.lineno(1)
+
+def p_procedure_call(p):
+    '''procedure_call : PROC_IDENT LPAREN opt_args RPAREN'''
+    p[0] = ASTnode("procedure_call")
     p[0].child_name = create_node("id_name", p[1], p.lineno(1))
     p[0].children_args = p[3]
     p[0].lineno = p.lineno(1)
