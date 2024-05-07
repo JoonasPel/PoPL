@@ -4,7 +4,8 @@ import ply.yacc
 import ply.lex
 import lexer
 import tree_print
-import semantics_check
+import simple_semantics_check
+from semantics_common import SemData
 
 # Class for syntax tree nodes
 class ASTnode:
@@ -413,4 +414,5 @@ if __name__ == '__main__':
         data = codecs.open( ns.file, encoding='utf-8' ).read()
         ast_tree = parser.parse(data, lexer=lexer.lexer, debug=False)
         tree_print.treeprint(ast_tree, outformat)
-        semantics_check.semantic_checks(ast_tree)
+        semdata = SemData()
+        simple_semantics_check.semantic_checks(ast_tree, semdata)

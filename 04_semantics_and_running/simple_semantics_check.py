@@ -96,9 +96,7 @@ def check_return_stms_allowed_after(node, semdata):
         semdata.return_exists = False
         semdata.return_stmt_exists = False
 
-def semantic_checks(tree):
-    semdata = SemData()
-
+def semantic_checks(tree, semdata):
     visit_tree(tree, check_date_attr_read, None, semdata)
     visit_tree(tree, check_date_attr_assign, None, semdata)
     visit_tree(tree, check_func_proc_returntypes, None, semdata)
@@ -114,4 +112,3 @@ def semantic_checks(tree):
     semdata.return_exists = False
     semdata.return_stmt_exists = False
     visit_tree(tree, check_return_stms_allowed_before, check_return_stms_allowed_after, semdata)
-    print("Semantics ok:")
