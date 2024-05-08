@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 #
 
+from datetime import datetime
+import sys
 import symtbl_semantics_check
 import tree_print
 import tree_generation
 import lexer
-import sys
 from semantics_common import SymbolData, SemData
 
 
@@ -37,6 +38,7 @@ def eval_node(node, semdata):
         return node.value
     elif nodetype == "id_name":
         return node.symdata.value
+    
     elif nodetype.endswith("_op"):
         left_value = eval_node(node.child_left_expr, semdata)
         right_value = eval_node(node.child_right_expr, semdata)
@@ -49,30 +51,70 @@ def eval_node(node, semdata):
             return left_value + right_value
         if oper == "-":
             return left_value - right_value
-        
+        if oper == "=":
+            return left_value == right_value
+        if oper == "<":
+            return left_value < right_value
+        print(f"Error, unknown operator type: {oper}")
+
+    elif nodetype == "attr_read":
+        date = eval_node(node.child_var, semdata)
+        attr = eval_node(node.child_attr, semdata)
+        if attr == "day":
+            return date.day
+        if attr == "month":
+            return date.month
+        if attr == "year":
+            return date.year
+        print(f"Error, unknown date attr type: {attr}")
+    elif nodetype == "attr_assign":
+        date = eval_node(node.child_var, semdata)
+        attr = eval_node(node.child_attr, semdata)
+        return date, attr
+    elif nodetype == "attr":
+        return node.value
+
+    elif nodetype == "assignment":
+        l_value = node.child_lvalue
+        r_value = eval_node(node.child_rvalue, semdata)
+        nodetype = l_value.nodetype
+        if nodetype == "id_name":
+            l_value.symdata.value = r_value
+        elif nodetype == "attr_assign":
+            date, attr = eval_node(l_value, semdata)
+            if attr == "day":
+                l_value.child_var.symdata.value = date.replace(day=r_value)
+            elif attr == "month":
+                l_value.child_var.symdata.value = date.replace(month=r_value)
+            elif attr == "year":
+                l_value.child_var.symdata.value = date.replace(year=r_value)
+            else:
+                print(f"Error, unknown date attr type: {attr}")
+        else:
+            print(f"Error, unknown assingment type: {nodetype}")
+
     elif nodetype == "print_statement":
         for printitem in node.children_printitems:
             print(eval_node(printitem, semdata), end=" ")
         print()
-
-
-    elif nodetype == 'assign':
-        # Execute the expression
-        expr_value = eval_node(node.child_expr, semdata)
-        # Change the value of the variable in symbol data
-        node.symdata.value = expr_value
-        # Print out the assignment
-        print(node.value, "=", expr_value)
-        return None
-
-    elif nodetype == 'number':
-        # Return the value of the number as result
-        return node.value
-
-    elif nodetype == 'variable':
-        # Return the value of the variable in symboldata as result
-        return node.symdata.value
-
+    elif nodetype == "loop_statement":
+        while True:
+            for i in node.children_stmts:
+                eval_node(i, semdata)
+            if eval_node(node.child_condition, semdata):
+                break
+    elif nodetype == "unless_stmt":
+        if not eval_node(node.child_unless, semdata):
+            for i in node.children_stmts:
+                eval_node(i, semdata)
+        else:
+            for i in node.children_otherwise:
+                eval_node(i, semdata)
+    
+    elif nodetype == "unless_expr":
+        if not eval_node(node.child_unless, semdata):
+            return eval_node(node.child_do, semdata)
+        return eval_node(node.child_otherwise, semdata)
 
     else:
         print("Error, unknown node of type " + nodetype)
