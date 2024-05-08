@@ -65,9 +65,9 @@ def check_symbols_after(node, semdata):
     if node.nodetype == "formal_arg":
         semdata.formal_arg = False
 
-# todo : test function_call
+
 # Check procedures and functions are used with correct parameters count
-# todo rename. also check param types
+# also check param types
 def check_parameters_and_calling(node, semdata):
     nodetype = node.nodetype
     # Check param counts are correct
@@ -92,7 +92,6 @@ def check_parameters_and_calling(node, semdata):
 
     if nodetype.endswith("_statement"):
         semdata.inside_statement = True
-    # Todo add expression
 
 def after_param_call_check(node, semdata):
     nodetype = node.nodetype

@@ -152,9 +152,6 @@ if __name__ == "__main__":
         semdata = SemData()
         symtbl_semantics_check.semantic_checks(ast_tree, semdata)
         tree_print.treeprint(ast_tree)
-        print("Semantics ok.")
         run_program(ast_tree, semdata)
-        print("Program finished.")
-
-        # Todo : Remove this. Debugging only
-        symtbl_semantics_check.print_symbol_table(semdata, title="Symbols:")
+        # Uncomment to print symbol table:
+        #symtbl_semantics_check.print_symbol_table(semdata, title="Symbols:")
