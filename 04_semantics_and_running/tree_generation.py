@@ -41,7 +41,7 @@ def p_statement_list1(p):
 def p_statement_list2(p):
     '''statement_list : statement COMMA statement_list'''
     p[0] = p[3]
-    p[0].append(p[1])
+    p[0].insert(0, p[1])
 
 def p_definitions1(p):
     '''definitions : function_definition'''
