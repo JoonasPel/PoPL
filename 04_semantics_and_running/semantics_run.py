@@ -19,7 +19,6 @@ def run_program(tree, semdata):
 
 
 def eval_node(node, semdata):
-    symtbl = semdata.symtbl
     nodetype = node.nodetype
     if nodetype == "program":
         for i in node.children_definitions:
@@ -115,6 +114,18 @@ def eval_node(node, semdata):
         if not eval_node(node.child_unless, semdata):
             return eval_node(node.child_do, semdata)
         return eval_node(node.child_otherwise, semdata)
+
+    elif nodetype == "function_def":
+        pass
+    elif nodetype == "function_call":
+        func_name = node.child_name.value
+        func_node = semdata.symtbl[func_name].defnode
+        # Initialize formal args to the value given to them in function call
+        for idx, formal_arg in enumerate(func_node.children_formal_args):
+            calling_value = eval_node(node.children_args[idx], semdata)
+            formal_arg.symdata.value = calling_value
+        # Execute body
+        return eval_node(func_node.child_body, semdata)
 
     else:
         print("Error, unknown node of type " + nodetype)

@@ -18,20 +18,36 @@ def add_symbol_to_symtbl(node, symbol_name, symbol_type, semdata, error_msg):
 # Collect symbols to the symbol table. Returns None | error message
 def add_symbols(node, semdata):
     result = None
-    if node.nodetype == 'variable_def':
+    nodetype = node.nodetype
+    if nodetype == "variable_def":
         result = add_symbol_to_symtbl(
             node,
             symbol_name=node.child_name.value,
             symbol_type=node.child_init_value.nodetype,
             semdata=semdata,
             error_msg="variable")
-    if node.nodetype == 'procedure_def':
+    elif nodetype == "procedure_def":
         result = add_symbol_to_symtbl(
             node,
             symbol_name=node.child_name.value,
             symbol_type=node.nodetype,
             semdata=semdata,
             error_msg="procedure")
+    elif nodetype == "function_def":
+        result = add_symbol_to_symtbl(
+            node,
+            symbol_name=node.child_name.value,
+            symbol_type=node.nodetype,
+            semdata=semdata,
+            error_msg="function")
+    elif nodetype == "formal_arg":
+        result = add_symbol_to_symtbl(
+            node,
+            symbol_name=node.child_name.value,
+            symbol_type=node.child_type.value,
+            semdata=semdata,
+            error_msg="formal arg")
+
     return result
 
 # Check symbol use, add link to symbol data
@@ -41,10 +57,9 @@ def check_symbols(node, semdata):
         name = node.value
         if name not in semdata.symtbl:
             return f"Error, undefined symbol {name} on line {str(node.lineno)}"
-        # Add symbol data link to variable's AST node (for execution)
         node.symdata = semdata.symtbl[name]
     if nodetype == "formal_arg":
-        semdata.formal_arg = True
+        semdata.formal_arg = True    
 
 def check_symbols_after(node, semdata):
     if node.nodetype == "formal_arg":
